@@ -37,9 +37,22 @@
   <div id="assignments"></div>
 </section>
 
+<!-- Past Assignments Modal -->
+<div id="historyModal" class="modal hidden">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>Past Assignments (Last 30 Days)</h2>
+      <button id="closeHistoryBtn">✖</button>
+    </div>
+    <div id="historyContent"></div>
+  </div>
+</div>
+
+
 <section>
   <h2>Maintenance</h2>
   <button id="cleanupBtn">Delete Assignments Older Than 30 Days</button>
+  <button id="viewHistoryBtn">View Past Assignments</button>
 </section>
 
 <script src="script.js"></script>

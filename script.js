@@ -1,5 +1,14 @@
 const STORAGE_KEY = "choreSchedulerData_v1";
-const today = new Date().toISOString().slice(0, 10);
+function getLocalDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const today = getLocalDateString();
+
 
 document.getElementById("today").textContent = today;
 
@@ -8,6 +17,8 @@ document.getElementById("addPersonBtn").onclick = addPerson;
 document.getElementById("generateBtn").onclick = generateAssignments;
 document.getElementById("confirmBtn").onclick = confirmAssignments;
 document.getElementById("cleanupBtn").onclick = cleanupOldData;
+document.getElementById("viewHistoryBtn").onclick = openHistoryModal;
+document.getElementById("closeHistoryBtn").onclick = closeHistoryModal;
 
 /* ---------- Storage ---------- */
 
@@ -282,6 +293,67 @@ function generateAssignments() {
   renderAssignments();
 }
 
+/*----------- View History -----------*/
+
+function openHistoryModal() {
+  renderHistory();
+  document.getElementById("historyModal").classList.remove("hidden");
+}
+
+function closeHistoryModal() {
+  document.getElementById("historyModal").classList.add("hidden");
+}
+
+function renderHistory() {
+  const data = loadData();
+  const container = document.getElementById("historyContent");
+  container.innerHTML = "";
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+
+  const dates = Object.keys(data.assignmentsByDate)
+    .filter(date => new Date(date) >= cutoff)
+    .sort()
+    .reverse();
+
+  if (dates.length === 0) {
+    container.textContent = "No assignment history available.";
+    return;
+  }
+
+  dates.forEach(date => {
+    const day = data.assignmentsByDate[date];
+    const dayDiv = document.createElement("div");
+    dayDiv.className = "history-day";
+
+    const dateHeader = document.createElement("div");
+    dateHeader.className = "history-date";
+    dateHeader.textContent = date;
+
+    if (day.confirmed) {
+      const confirmed = document.createElement("span");
+      confirmed.className = "history-confirmed";
+      confirmed.textContent = "(Confirmed)";
+      dateHeader.appendChild(confirmed);
+    }
+
+    dayDiv.appendChild(dateHeader);
+
+    Object.entries(day.assignments).forEach(([choreId, personId]) => {
+      const chore = data.chores.find(c => c.id === choreId);
+      const person = data.people.find(p => p.id === personId);
+
+      const item = document.createElement("div");
+      item.className = "history-item";
+      item.textContent = `• ${chore?.name ?? "Unknown Chore"} — ${person?.name ?? "Unknown Person"}`;
+
+      dayDiv.appendChild(item);
+    });
+
+    container.appendChild(dayDiv);
+  });
+}
 
 
 /* ---------- Confirmation ---------- */
