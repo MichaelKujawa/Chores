@@ -1,0 +1,53 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f7fa;
+  margin: 0;
+  padding: 20px;
+}
+
+h1, h2 {
+  margin-top: 0;
+}
+
+section {
+  background: #ffffff;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+input[type="text"] {
+  padding: 6px;
+  width: 70%;
+}
+
+button {
+  padding: 6px 10px;
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 6px;
+}
+
+.assignment {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.assignment select {
+  margin-left: 10px;
+}
+
+.warning {
+  color: #b00020;
+  font-weight: bold;
+}

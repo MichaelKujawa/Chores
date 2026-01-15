@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Chore Assigner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h1>Daily Chore Assigner</h1>
+<p><strong>Date:</strong> <span id="today"></span></p>
+
+<section>
+  <h2>Chores</h2>
+  <input id="newChore" type="text" placeholder="New chore">
+  <button id="addChoreBtn">Add</button>
+  <ul id="choreList"></ul>
+</section>
+
+<section>
+  <h2>People</h2>
+  <input id="newPerson" type="text" placeholder="New person">
+  <button id="addPersonBtn">Add</button>
+  <ul id="personList"></ul>
+</section>
+
+<section>
+  <h2>Availability</h2>
+  <ul id="availabilityList"></ul>
+</section>
+
+<section>
+  <h2>Assignments</h2>
+  <button id="generateBtn">Generate</button>
+  <button id="confirmBtn">Confirm</button>
+  <p id="warning" class="warning"></p>
+  <div id="assignments"></div>
+</section>
+
+<section>
+  <h2>Maintenance</h2>
+  <button id="cleanupBtn">Delete Assignments Older Than 30 Days</button>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>
