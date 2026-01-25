@@ -172,13 +172,28 @@ function renderAssignments() {
     label.textContent = chore.name;
 
     const select = document.createElement("select");
+
+    const assignedPersonId = day.assignments[chore.id];
+
     data.people.forEach(p => {
+      const isAssigned = assignedPersonId === p.id;
+      const isAvailable = day.availablePersonIds.includes(p.id);
+
+      // Model A: allow showing assigned person even if unavailable
+      if (!isAvailable && !isAssigned) return;
+
       const opt = document.createElement("option");
       opt.value = p.id;
       opt.textContent = p.name;
-      opt.selected = day.assignments[chore.id] === p.id;
+      opt.selected = isAssigned;
+
+      if (!isAvailable && isAssigned) {
+        opt.textContent += " (Unavailable)";
+      }
+
       select.appendChild(opt);
     });
+
 
     select.onchange = () => {
       const personId = select.value;
@@ -237,12 +252,18 @@ function renameChore(id, name) {
   const data = loadData();
   data.chores.find(c => c.id === id).name = name;
   saveData(data);
+
+  renderAssignments();
+  renderAvailability();
 }
 
 function renamePerson(id, name) {
   const data = loadData();
   data.people.find(p => p.id === id).name = name;
   saveData(data);
+
+  renderAssignments();
+  renderAvailability();
 }
 
 function deleteChore(id) {
@@ -288,6 +309,8 @@ function toggleAvailability(personId, available) {
   }
 
   saveData(data);
+
+  renderAssignments();
 }
 
 /* ---------- Rule Engine ---------- */
