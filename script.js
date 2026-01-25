@@ -46,10 +46,53 @@ function getAllPersonIds(data) {
 }
 
 function normalizeAvailability(data, date) {
-  const day = data.assignmentsByDate[date];
-  if (!day.availablePersonIds || day.availablePersonIds.length === 0) {
-    day.availablePersonIds = getAllPersonIds(data);
+  let day = data.assignmentsByDate[date];
+
+  // Create day if missing
+  if (!day) {
+    const lastDay = getLastWorkday(data, date);
+
+    day = data.assignmentsByDate[date] = {
+      availablePersonIds:
+        lastDay && lastDay.availablePersonIds.length
+          ? [...lastDay.availablePersonIds]
+          : [],
+      assignments: {},
+      confirmed: false
+    };
+
+    saveData(data);
+    return;
   }
+
+  // Sanitize existing day
+  if (!Array.isArray(day.availablePersonIds)) {
+    day.availablePersonIds = [];
+  }
+
+  if (day.availablePersonIds.length === 0) {
+    const lastDay = getLastWorkday(data, date);
+    if (lastDay?.availablePersonIds?.length) {
+      day.availablePersonIds = [...lastDay.availablePersonIds];
+    }
+  }
+
+  // Remove deleted people
+  day.availablePersonIds = day.availablePersonIds.filter(pid =>
+    data.people.some(p => p.id === pid)
+  );
+
+  saveData(data);
+}
+
+
+function getLastWorkday(data, beforeDate) {
+  const dates = Object.keys(data.assignmentsByDate)
+    .filter(d => d < beforeDate)
+    .sort()
+    .reverse();
+
+  return dates.length ? data.assignmentsByDate[dates[0]] : null;
 }
 
 /* ---------- Rendering ---------- */
@@ -74,7 +117,12 @@ function renderList(id, items, renameFn, deleteFn) {
 
     const btn = document.createElement("button");
     btn.textContent = "✖";
-    btn.onclick = () => deleteFn(item.id);
+    btn.onclick = () => {
+    const confirmed = confirm(`Delete "${item.name}"?`);
+    if (!confirmed) return;
+    deleteFn(item.id);
+};
+
 
     li.append(input, btn);
     ul.appendChild(li);
@@ -133,7 +181,26 @@ function renderAssignments() {
     });
 
     select.onchange = () => {
-      day.assignments[chore.id] = select.value;
+      const personId = select.value;
+
+      // HARD RULE: availability
+      if (!day.availablePersonIds.includes(personId)) {
+        alert("This person is marked unavailable.");
+        renderAssignments();
+        return;
+      }
+
+      // HARD RULE: one chore per day
+      const alreadyAssigned = Object.values(day.assignments)
+        .filter(id => id === personId).length;
+
+      if (alreadyAssigned >= 1) {
+        alert("This person already has a chore today.");
+        renderAssignments();
+        return;
+      }
+
+      day.assignments[chore.id] = personId;
       saveData(data);
     };
 
@@ -230,65 +297,110 @@ function generateAssignments() {
   const day = data.assignmentsByDate[today];
   normalizeAvailability(data, today);
 
-  // 🔴 CRITICAL FIX: clear previous assignments
-  day.assignments = {};
+  if (!day) return;
+
+  if (day.confirmed) {
+    alert("Assignments are already confirmed for today.");
+    return;
+  }
+
+  const warningsEl = document.getElementById("warning");
+  warningsEl.textContent = "";
 
   const available = [...day.availablePersonIds];
-  const dates = Object.keys(data.assignmentsByDate).sort().reverse().slice(1);
-  const warnings = [];
+  const chores = data.chores;
 
-  const assignedToday = new Set();
-  const enforceSingleChore = available.length >= data.chores.length;
+  /* ---------- HARD BLOCKS ---------- */
 
-  data.chores.forEach(chore => {
+  if (!available.length) {
+    warningsEl.textContent =
+      "No available people selected. Please select availability before generating assignments.";
+    return;
+  }
+
+  if (available.length < chores.length) {
+    warningsEl.textContent =
+      "Not enough available people for all chores. Please adjust availability or assign manually.";
+    return;
+  }
+
+  /* ---------- HISTORY ---------- */
+
+  const dates = Object.keys(data.assignmentsByDate)
+    .filter(d => d < today)
+    .sort()
+    .reverse();
+
+  const enforceSingleChore = available.length >= chores.length;
+
+  /* ---------- PHASE 1: STRICT FAIRNESS ---------- */
+
+  let newAssignments = {};
+  let assignedToday = new Set();
+  let success = true;
+
+  for (const chore of chores) {
     let candidates = [...available];
 
-    // HARD RULE: one chore per person per day
     if (enforceSingleChore) {
       candidates = candidates.filter(pid => !assignedToday.has(pid));
     }
 
-    // HARD RULE: no 3 consecutive assignment days
+    // No 3 consecutive assignment days
     candidates = candidates.filter(pid =>
       !dates.slice(0, 2).every(d =>
-        Object.values(data.assignmentsByDate[d].assignments).includes(pid)
+        Object.values(data.assignmentsByDate[d]?.assignments || {}).includes(pid)
       )
     );
 
-    // HARD RULE: same chore within last 5 days
+    // Same chore cooldown (5 days)
     candidates = candidates.filter(pid =>
       !dates.slice(0, 5).some(d =>
-        data.assignmentsByDate[d].assignments[chore.id] === pid
+        data.assignmentsByDate[d]?.assignments?.[chore.id] === pid
       )
     );
 
-    if (candidates.length === 0) {
-      // Relax fairness rules silently
-      candidates = [...available].filter(pid =>
-        !enforceSingleChore || !assignedToday.has(pid)
-      );
-    }
-
-    if (candidates.length === 0) {
-      // TRUE failure — user must intervene
-      warnings.push(`Manual review required for "${chore.name}"`);
-      return;
-    }
-
-
-    if (candidates.length === 0) {
-      throw new Error(
-        `Assignment impossible without violating daily limits for "${chore.name}"`
-      );
+    if (!candidates.length) {
+      success = false;
+      break;
     }
 
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
-    day.assignments[chore.id] = pick;
+    newAssignments[chore.id] = pick;
     assignedToday.add(pick);
+  }
 
-  });
+  /* ---------- PHASE 2: RELAX FAIRNESS ---------- */
 
-  document.getElementById("warning").textContent = warnings.join(" | ");
+  if (!success) {
+    newAssignments = {};
+    assignedToday = new Set();
+
+    for (const chore of chores) {
+      let candidates = [...available];
+
+      if (enforceSingleChore) {
+        candidates = candidates.filter(pid => !assignedToday.has(pid));
+      }
+
+      if (!candidates.length) {
+        warningsEl.textContent =
+          "Assignment impossible without violating daily limits. Manual review required.";
+        return;
+      }
+
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      newAssignments[chore.id] = pick;
+      assignedToday.add(pick);
+    }
+
+    warningsEl.textContent =
+      "Fairness rules were relaxed for some chores. Manual review recommended.";
+  }
+
+  /* ---------- COMMIT ATOMICALLY ---------- */
+
+  day.assignments = newAssignments;
   saveData(data);
   renderAssignments();
 }
@@ -331,12 +443,18 @@ function renderHistory() {
     dateHeader.className = "history-date";
     dateHeader.textContent = date;
 
+    const status = document.createElement("span");
+
     if (day.confirmed) {
-      const confirmed = document.createElement("span");
-      confirmed.className = "history-confirmed";
-      confirmed.textContent = "(Confirmed)";
-      dateHeader.appendChild(confirmed);
+      status.className = "history-confirmed";
+      status.textContent = " (Confirmed)";
+    } else {
+      status.className = "history-unconfirmed";
+      status.textContent = " (Unconfirmed)";
     }
+
+    dateHeader.appendChild(status);
+
 
     dayDiv.appendChild(dateHeader);
 
@@ -381,5 +499,66 @@ function cleanupOldData() {
   saveData(data);
   alert("Old assignment data deleted.");
 }
+
+/* ---- Add Chore Modal Logic (UI Only) ---- */
+
+const openAddChoreModalBtn = document.getElementById("openAddChoreModal");
+const addChoreModal = document.getElementById("addChoreModal");
+const modalChoreInput = document.getElementById("modalChoreInput");
+const confirmAddChoreBtn = document.getElementById("confirmAddChore");
+const cancelAddChoreBtn = document.getElementById("cancelAddChore");
+
+openAddChoreModalBtn.onclick = () => {
+  modalChoreInput.value = "";
+  addChoreModal.classList.remove("hidden");
+  modalChoreInput.focus();
+};
+
+cancelAddChoreBtn.onclick = () => {
+  addChoreModal.classList.add("hidden");
+};
+
+confirmAddChoreBtn.onclick = () => {
+  const hiddenInput = document.getElementById("newChore");
+
+  hiddenInput.value = modalChoreInput.value.trim();
+  if (!hiddenInput.value) return;
+
+  // Trigger existing logic
+  document.getElementById("addChoreBtn").click();
+
+  addChoreModal.classList.add("hidden");
+};
+
+/* ---- Add Person Modal Logic (UI Only) ---- */
+
+const openAddPersonModalBtn = document.getElementById("openAddPersonModal");
+const addPersonModal = document.getElementById("addPersonModal");
+const modalPersonInput = document.getElementById("modalPersonInput");
+const confirmAddPersonBtn = document.getElementById("confirmAddPerson");
+const cancelAddPersonBtn = document.getElementById("cancelAddPerson");
+
+openAddPersonModalBtn.onclick = () => {
+  modalPersonInput.value = "";
+  addPersonModal.classList.remove("hidden");
+  modalPersonInput.focus();
+};
+
+cancelAddPersonBtn.onclick = () => {
+  addPersonModal.classList.add("hidden");
+};
+
+confirmAddPersonBtn.onclick = () => {
+  const hiddenInput = document.getElementById("newPerson");
+
+  hiddenInput.value = modalPersonInput.value.trim();
+  if (!hiddenInput.value) return;
+
+  // Trigger existing logic
+  document.getElementById("addPersonBtn").click();
+
+  addPersonModal.classList.add("hidden");
+};
+
 
 renderAll();

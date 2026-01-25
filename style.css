@@ -115,3 +115,41 @@ li {
 .history-item {
   margin-left: 10px;
 }
+
+/* Temporarily hide JS-required inputs */
+.hidden-input {
+  display: none;
+}
+
+.hidden {
+  display: none;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px;
+  width: 300px;
+  border-radius: 6px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.history-unconfirmed {
+  color: #888;
+  font-style: italic;
+}
