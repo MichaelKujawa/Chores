@@ -1,67 +1,413 @@
+/* ========================================
+   GLOBAL STYLES & RESET
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f5f7fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #e8f4f8;
   margin: 0;
   padding: 20px;
+  color: #333;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-h1, h2 {
-  margin-top: 0;
+/* Grid container for card layout */
+.app-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, max-content));
+  gap: 20px;
+  justify-content: center;
 }
 
-section {
-  background: #ffffff;
-  padding: 15px;
+h1 {
+  text-align: center;
+  color: #ffffff;
+  background: linear-gradient(135deg, #5dced8 0%, #4db8c4 100%);
+  padding: 20px;
+  border-radius: 12px;
+  margin: 0 0 20px 0;
+  box-shadow: 0 4px 12px rgba(93, 206, 216, 0.3);
+}
+
+h2 {
+  margin: 0 0 20px 0;
+  padding-bottom: 15px;
+  color: #ffffff;
+  font-size: 1.5rem;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  width: 100%;
+}
+
+h3 {
+  margin: 0 0 15px 0;
+  color: #4db8c4;
+  font-size: 1.3rem;
+}
+
+/* ========================================
+   CARD STYLES
+   ======================================== */
+
+.card, section {
+  background: linear-gradient(135deg, #5dced8 0%, #4db8c4 100%);
+  padding: 25px;
   margin-bottom: 20px;
-  border-radius: 6px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  border-radius: 20px;
+  box-shadow: 0 6px 20px rgba(93, 206, 216, 0.4);
+  color: #ffffff;
+  width: fit-content;
+  min-width: 400px;
 }
 
-input[type="text"] {
-  padding: 6px;
-  width: 70%;
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  width: 100%;
 }
+
+.card-header h2 {
+  flex: 1;
+  margin-right: 15px;
+}
+
+/* Date display */
+body > p {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #4db8c4;
+  font-weight: 600;
+  margin-bottom: 25px;
+}
+
+#today {
+  color: #5dced8;
+  font-weight: 700;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
 
 button {
-  padding: 6px 10px;
-  margin-left: 5px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
   cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Icon buttons (+ button) */
+.icon-btn {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Delete buttons (X) */
+ul li button {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  padding: 0;
+  margin-left: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+ul li button:hover {
+  background: rgba(255, 82, 82, 0.8);
+}
+
+/* Generate button */
+#generateBtn {
+  background: rgba(0, 0, 0, 0.2);
+  color: #ffffff;
+  backdrop-filter: blur(10px);
+  margin-bottom: 15px;
+}
+
+#generateBtn:hover {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* Confirm button */
+#confirmBtn {
+  background: #b8e986;
+  color: #2d5016;
+  margin-left: 10px;
+  margin-bottom: 15px;
+}
+
+#confirmBtn:hover {
+  background: #a8d976;
+}
+
+/* Maintenance buttons */
+#cleanupBtn,
+#viewHistoryBtn {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  margin-bottom: 10px;
+  width: 100%;
+  backdrop-filter: blur(10px);
+}
+
+#cleanupBtn:hover,
+#viewHistoryBtn:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ========================================
+   LISTS
+   ======================================== */
 
 ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 li {
-  margin-bottom: 6px;
+  margin-bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 12px 15px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  gap: 10px;
+  min-width: 180px;
 }
 
+/* Two column list for chores and people */
+#choreList,
+#personList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 800px;
+}
+
+#choreList li,
+#personList li {
+  margin-bottom: 0;
+}
+
+/* Availability list - two columns */
+#availabilityList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(200px, 1fr));
+  gap: 12px;
+  max-width: 800px;
+}
+
+#availabilityList li {
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.15);
+  min-width: 200px;
+  flex-direction: row;
+}
+
+#availabilityList li::before {
+  content: none;
+}
+
+/* ========================================
+   INPUTS
+   ======================================== */
+
+input[type="text"] {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 10px 15px;
+  border-radius: 10px;
+  font-size: 1rem;
+  color: #333;
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #ffffff;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+/* List item inputs */
+li input[type="text"] {
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-weight: 500;
+  padding: 5px;
+  width: auto;
+  min-width: 100px;
+}
+
+li input[type="text"]:focus {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+/* ========================================
+   CHECKBOXES - TOGGLE SWITCHES
+   ======================================== */
+
+/* Hide default checkbox */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 60px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 15px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  top: 3px;
+  left: 3px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+input[type="checkbox"]:checked {
+  background: #b8e986;
+}
+
+input[type="checkbox"]:checked::before {
+  left: 33px;
+}
+
+/* ========================================
+   ASSIGNMENTS SECTION
+   ======================================== */
+
 .assignment {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  margin-bottom: 8px;
+  gap: 15px;
+  margin-bottom: 15px;
+  margin-right: 15px;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 15px 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  min-width: 300px;
+}
+
+.assignment strong {
+  color: #ffffff;
+  font-size: 1.1rem;
+  white-space: nowrap;
 }
 
 .assignment select {
-  margin-left: 10px;
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  padding: 8px 15px;
+  border-radius: 10px;
+  font-size: 1rem;
+  cursor: pointer;
+  width: auto;
+  min-width: 120px;
+  backdrop-filter: blur(10px);
+  font-weight: 500;
 }
+
+.assignment select:focus {
+  outline: none;
+  border-color: #ffffff;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.assignment select option {
+  background: #4db8c4;
+  color: #ffffff;
+}
+
+/* ========================================
+   WARNING / ERROR MESSAGES
+   ======================================== */
 
 .warning {
-  color: #b00020;
-  font-weight: bold;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-weight: 600;
+  padding: 12px 15px;
+  border-radius: 10px;
+  margin: 15px 0;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  min-height: 20px;
 }
 
-/* ---------- Modal ---------- */
+.warning:empty {
+  display: none;
+}
+
+/* ========================================
+   MODALS
+   ======================================== */
 
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 }
 
 .modal.hidden {
@@ -69,32 +415,94 @@ li {
 }
 
 .modal-content {
-  background: #fff;
-  width: 80%;
-  max-width: 700px;
+  background: linear-gradient(135deg, #5dced8 0%, #4db8c4 100%);
+  width: 90%;
+  max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  border-radius: 8px;
-  padding: 15px;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  color: #ffffff;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
 }
 
 .modal-header button {
-  font-size: 18px;
-  background: none;
-  border: none;
-  cursor: pointer;
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  font-size: 1.3rem;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+.modal-header button:hover {
+  background: rgba(255, 82, 82, 0.8);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.modal-actions button {
+  min-width: 100px;
+}
+
+#confirmAddChore,
+#confirmAddPerson {
+  background: #b8e986;
+  color: #2d5016;
+}
+
+#confirmAddChore:hover,
+#confirmAddPerson:hover {
+  background: #a8d976;
+}
+
+#cancelAddChore,
+#cancelAddPerson {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+}
+
+#cancelAddChore:hover,
+#cancelAddPerson:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Modal inputs */
+.modal-content input[type="text"] {
+  width: 100%;
+  margin-top: 10px;
+}
+
+/* ========================================
+   HISTORY MODAL STYLES
+   ======================================== */
+
 .history-day {
-  border-bottom: 1px solid #ddd;
-  padding: 10px 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 15px 0;
 }
 
 .history-day:last-child {
@@ -102,54 +510,129 @@ li {
 }
 
 .history-date {
-  font-weight: bold;
-  margin-bottom: 5px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 10px;
+  color: #ffffff;
 }
 
 .history-confirmed {
-  font-size: 12px;
-  color: green;
-  margin-left: 6px;
-}
-
-.history-item {
-  margin-left: 10px;
-}
-
-/* Temporarily hide JS-required inputs */
-.hidden-input {
-  display: none;
-}
-
-.hidden {
-  display: none;
-}
-
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: #fff;
-  padding: 20px;
-  width: 300px;
-  border-radius: 6px;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 15px;
+  font-size: 0.9rem;
+  color: #b8e986;
+  font-weight: 600;
+  margin-left: 8px;
 }
 
 .history-unconfirmed {
-  color: #888;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
   font-style: italic;
+  margin-left: 8px;
+}
+
+.history-item {
+  margin-left: 15px;
+  padding: 8px 0;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 0.95rem;
+}
+
+#historyContent:empty::after {
+  content: 'No assignment history available.';
+  display: block;
+  text-align: center;
+  padding: 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-style: italic;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.hidden {
+  display: none !important;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+  #choreList,
+  #personList,
+  #availabilityList {
+    grid-template-columns: 1fr;
+  }
+
+  .assignment {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .assignment select {
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    padding: 15px;
+  }
+
+  .card, section {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  body {
+    padding: 10px;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 20px;
+  }
+
+  button {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+
+  input[type="checkbox"] {
+    width: 50px;
+    height: 26px;
+  }
+
+  input[type="checkbox"]::before {
+    width: 20px;
+    height: 20px;
+  }
+
+  input[type="checkbox"]:checked::before {
+    left: 27px;
+  }
+}
+
+/* ========================================
+   SCROLLBAR STYLING (OPTIONAL)
+   ======================================== */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
 }
