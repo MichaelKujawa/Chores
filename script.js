@@ -188,7 +188,9 @@ function renderList(id, items, renameFn, deleteFn) {
     const li = document.createElement("li");
     
     const input = document.createElement("input");
+    input.type = "text";
     input.value = item.name;
+    input.size = Math.max(item.name.length || 10, 10); // Set size based on content
     input.onchange = () => {
       const trimmed = input.value.trim();
       if (!trimmed) {
@@ -197,6 +199,10 @@ function renderList(id, items, renameFn, deleteFn) {
         return;
       }
       renameFn(item.id, trimmed);
+    };
+    // Update size dynamically as user types
+    input.oninput = () => {
+      input.size = Math.max(input.value.length || 10, 10);
     };
 
     const btn = document.createElement("button");

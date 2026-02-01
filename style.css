@@ -1,203 +1,193 @@
 /* ========================================
-   GLOBAL STYLES & RESET
+   CLEAN & SIMPLE CHORE ASSIGNER STYLES
    ======================================== */
 
+/* Reset and Base Styles */
 * {
   box-sizing: border-box;
 }
 
 body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #e8f4f8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+  background: #f5f5f5;
   margin: 0;
   padding: 20px;
   color: #333;
-  max-width: 1400px;
+  max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
+  line-height: 1.6;
 }
 
-/* Grid container for card layout */
-.app-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, max-content));
-  gap: 20px;
-  justify-content: center;
-}
-
+/* Header */
 h1 {
   text-align: center;
-  color: #ffffff;
-  background: linear-gradient(135deg, #5dced8 0%, #4db8c4 100%);
+  color: #2c3e50;
+  background: #ffffff;
   padding: 20px;
-  border-radius: 12px;
+  border-radius: 8px;
   margin: 0 0 20px 0;
-  box-shadow: 0 4px 12px rgba(93, 206, 216, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-size: 1.8rem;
 }
 
 h2 {
-  margin: 0 0 20px 0;
-  padding-bottom: 15px;
-  color: #ffffff;
-  font-size: 1.5rem;
+  margin: 0 0 15px 0;
+  color: #2c3e50;
+  font-size: 1.3rem;
   font-weight: 600;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 10px;
   width: 100%;
+  display: block;
 }
 
 h3 {
   margin: 0 0 15px 0;
-  color: #4db8c4;
-  font-size: 1.3rem;
+  color: #2c3e50;
+  font-size: 1.2rem;
 }
 
-/* ========================================
-   CARD STYLES
-   ======================================== */
-
-.card, section {
-  background: linear-gradient(135deg, #5dced8 0%, #4db8c4 100%);
-  padding: 25px;
+/* Date Display */
+body > p {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #555;
   margin-bottom: 20px;
-  border-radius: 20px;
-  box-shadow: 0 6px 20px rgba(93, 206, 216, 0.4);
-  color: #ffffff;
-  width: fit-content;
-  min-width: 400px;
+  background: white;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#today {
+  color: #3498db;
+  font-weight: 600;
+}
+
+/* Cards and Sections */
+.card,
+section {
+  background: #ffffff;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  width: 100%;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  gap: 15px;
 }
 
 .card-header h2 {
   flex: 1;
-  margin-right: 15px;
+  min-width: 0;
 }
 
-/* Date display */
-body > p {
-  text-align: center;
-  font-size: 1.1rem;
-  color: #4db8c4;
-  font-weight: 600;
-  margin-bottom: 25px;
-}
-
-#today {
-  color: #5dced8;
-  font-weight: 700;
-}
-
-/* ========================================
-   BUTTONS
-   ======================================== */
-
+/* Buttons */
 button {
   padding: 10px 20px;
   border: none;
-  border-radius: 25px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+  background: #3498db;
+  color: white;
 }
 
 button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+  background: #2980b9;
 }
 
 button:active {
-  transform: translateY(0);
+  transform: translateY(1px);
 }
 
-/* Icon buttons (+ button) */
+/* Icon Buttons (+ button) */
 .icon-btn {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  width: 40px;
-  height: 40px;
+  background: #3498db;
+  color: white;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(10px);
 }
 
 .icon-btn:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: #2980b9;
 }
 
-/* Delete buttons (X) */
+/* Delete Buttons */
 ul li button {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  width: 30px;
-  height: 30px;
+  background: #e74c3c;
+  color: white;
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
   border-radius: 50%;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   padding: 0;
-  margin-left: 10px;
-  display: inline-flex;
+  margin-left: auto;
+  flex-shrink: 0;
+  display: flex;
   align-items: center;
   justify-content: center;
+  line-height: 1;
 }
 
 ul li button:hover {
-  background: rgba(255, 82, 82, 0.8);
+  background: #c0392b;
 }
 
-/* Generate button */
+/* Generate Button */
 #generateBtn {
-  background: rgba(0, 0, 0, 0.2);
-  color: #ffffff;
-  backdrop-filter: blur(10px);
+  background: #95a5a6;
+  color: white;
+  margin-right: 10px;
   margin-bottom: 15px;
 }
 
 #generateBtn:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: #7f8c8d;
 }
 
-/* Confirm button */
+/* Confirm Button */
 #confirmBtn {
-  background: #b8e986;
-  color: #2d5016;
-  margin-left: 10px;
+  background: #27ae60;
+  color: white;
   margin-bottom: 15px;
 }
 
 #confirmBtn:hover {
-  background: #a8d976;
+  background: #229954;
 }
 
-/* Maintenance buttons */
+/* Maintenance Buttons */
 #cleanupBtn,
 #viewHistoryBtn {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+  background: #95a5a6;
+  color: white;
   margin-bottom: 10px;
   width: 100%;
-  backdrop-filter: blur(10px);
 }
 
 #cleanupBtn:hover,
 #viewHistoryBtn:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: #7f8c8d;
 }
 
-/* ========================================
-   LISTS
-   ======================================== */
-
+/* Lists */
 ul {
   list-style: none;
   padding: 0;
@@ -205,209 +195,179 @@ ul {
 }
 
 li {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: inline-flex;
   align-items: center;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 12px 15px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  gap: 10px;
-  min-width: 180px;
+  background: #f8f9fa;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  gap: 8px;
+  max-width: 100%;
 }
 
-/* Two column list for chores and people */
+li:hover {
+  background: #ecf0f1;
+}
+
+/* Two Column Lists */
 #choreList,
 #personList {
   display: grid;
-  grid-template-columns: repeat(2, minmax(200px, 1fr));
-  gap: 12px;
-  max-width: 800px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
 }
 
-#choreList li,
-#personList li {
-  margin-bottom: 0;
-}
-
-/* Availability list - two columns */
+/* Availability List */
 #availabilityList {
   display: grid;
-  grid-template-columns: repeat(2, minmax(200px, 1fr));
-  gap: 12px;
-  max-width: 800px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
 }
 
 #availabilityList li {
   justify-content: space-between;
-  background: rgba(255, 255, 255, 0.15);
-  min-width: 200px;
-  flex-direction: row;
 }
 
-#availabilityList li::before {
-  content: none;
-}
-
-/* ========================================
-   INPUTS
-   ======================================== */
-
+/* Inputs */
 input[type="text"] {
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  padding: 10px 15px;
-  border-radius: 10px;
-  font-size: 1rem;
+  background: white;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.95rem;
   color: #333;
-  flex: 1;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s;
 }
 
 input[type="text"]:focus {
   outline: none;
-  border-color: #ffffff;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+  border-color: #3498db;
 }
 
-/* List item inputs */
+/* List Item Inputs */
 li input[type="text"] {
   background: transparent;
   border: none;
-  color: #ffffff;
   font-weight: 500;
-  padding: 5px;
-  width: auto;
-  min-width: 100px;
+  padding: 4px 8px;
+  width: auto; /* Let size attribute control width */
+  color: #2c3e50;
 }
 
 li input[type="text"]:focus {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  box-shadow: none;
+  background: white;
+  border: 1px solid #3498db;
+  border-radius: 4px;
 }
 
-/* ========================================
-   CHECKBOXES - TOGGLE SWITCHES
-   ======================================== */
-
-/* Hide default checkbox */
+/* Checkboxes - Simple Toggle Switches */
 input[type="checkbox"] {
   appearance: none;
   -webkit-appearance: none;
-  width: 60px;
-  height: 30px;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 15px;
+  width: 50px;
+  height: 26px;
+  background: #cbd5e0;
+  border-radius: 13px;
   position: relative;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s;
   flex-shrink: 0;
 }
 
 input[type="checkbox"]::before {
   content: '';
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  background: #ffffff;
+  background: white;
   top: 3px;
   left: 3px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: left 0.3s;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 input[type="checkbox"]:checked {
-  background: #b8e986;
+  background: #27ae60;
 }
 
 input[type="checkbox"]:checked::before {
-  left: 33px;
+  left: 27px;
 }
 
-/* ========================================
-   ASSIGNMENTS SECTION
-   ======================================== */
-
+/* Assignments */
 .assignment {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 15px;
-  margin-bottom: 15px;
-  margin-right: 15px;
-  background: rgba(255, 255, 255, 0.15);
-  padding: 15px 20px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  min-width: 300px;
+  margin-bottom: 12px;
+  background: #f8f9fa;
+  padding: 12px 15px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
 }
 
 .assignment strong {
-  color: #ffffff;
-  font-size: 1.1rem;
-  white-space: nowrap;
+  color: #2c3e50;
+  font-size: 1rem;
+  min-width: 120px;
 }
 
 .assignment select {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  padding: 8px 15px;
-  border-radius: 10px;
-  font-size: 1rem;
+  background: white;
+  color: #333;
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.95rem;
   cursor: pointer;
-  width: auto;
-  min-width: 120px;
-  backdrop-filter: blur(10px);
-  font-weight: 500;
+  flex: 1;
+  max-width: 200px;
 }
 
 .assignment select:focus {
   outline: none;
-  border-color: #ffffff;
-  background: rgba(255, 255, 255, 0.4);
+  border-color: #3498db;
 }
 
 .assignment select option {
-  background: #4db8c4;
-  color: #ffffff;
+  background: white;
+  color: #333;
 }
 
-/* ========================================
-   WARNING / ERROR MESSAGES
-   ======================================== */
-
+/* Warning Messages */
 .warning {
-  background: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  font-weight: 600;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+  font-weight: 500;
   padding: 12px 15px;
-  border-radius: 10px;
+  border-radius: 6px;
   margin: 15px 0;
   text-align: center;
-  backdrop-filter: blur(10px);
-  min-height: 20px;
 }
 
 .warning:empty {
   display: none;
 }
 
-/* ========================================
-   MODALS
-   ======================================== */
+/* Success messages (when warning element is used for success) */
+.warning[style*="green"] {
+  background: #d4edda;
+  color: #155724;
+  border-color: #c3e6cb;
+}
 
+/* Modals */
 .modal {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  backdrop-filter: blur(5px);
 }
 
 .modal.hidden {
@@ -415,15 +375,14 @@ input[type="checkbox"]:checked::before {
 }
 
 .modal-content {
-  background: linear-gradient(135deg, #5dced8 0%, #4db8c4 100%);
+  background: #ffffff;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  border-radius: 20px;
+  border-radius: 8px;
   padding: 25px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
@@ -432,21 +391,23 @@ input[type="checkbox"]:checked::before {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.5);
+  border-bottom: 2px solid #e0e0e0;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: 1.3rem;
+  border: none;
+  padding: 0;
 }
 
 .modal-header button {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  width: 35px;
-  height: 35px;
+  background: #e74c3c;
+  color: white;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   padding: 0;
   display: flex;
   align-items: center;
@@ -454,7 +415,7 @@ input[type="checkbox"]:checked::before {
 }
 
 .modal-header button:hover {
-  background: rgba(255, 82, 82, 0.8);
+  background: #c0392b;
 }
 
 .modal-actions {
@@ -470,38 +431,36 @@ input[type="checkbox"]:checked::before {
 
 #confirmAddChore,
 #confirmAddPerson {
-  background: #b8e986;
-  color: #2d5016;
+  background: #27ae60;
+  color: white;
 }
 
 #confirmAddChore:hover,
 #confirmAddPerson:hover {
-  background: #a8d976;
+  background: #229954;
 }
 
 #cancelAddChore,
 #cancelAddPerson {
-  background: rgba(255, 255, 255, 0.3);
-  color: #ffffff;
+  background: #95a5a6;
+  color: white;
 }
 
 #cancelAddChore:hover,
 #cancelAddPerson:hover {
-  background: rgba(255, 255, 255, 0.5);
+  background: #7f8c8d;
 }
 
-/* Modal inputs */
+/* Modal Inputs */
 .modal-content input[type="text"] {
   width: 100%;
   margin-top: 10px;
+  padding: 10px 12px;
 }
 
-/* ========================================
-   HISTORY MODAL STYLES
-   ======================================== */
-
+/* History Modal */
 .history-day {
-  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 1px solid #e0e0e0;
   padding: 15px 0;
 }
 
@@ -510,30 +469,30 @@ input[type="checkbox"]:checked::before {
 }
 
 .history-date {
-  font-weight: 700;
-  font-size: 1.1rem;
-  margin-bottom: 10px;
-  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.05rem;
+  margin-bottom: 8px;
+  color: #2c3e50;
 }
 
 .history-confirmed {
-  font-size: 0.9rem;
-  color: #b8e986;
+  font-size: 0.85rem;
+  color: #27ae60;
   font-weight: 600;
   margin-left: 8px;
 }
 
 .history-unconfirmed {
-  font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  color: #95a5a6;
   font-style: italic;
   margin-left: 8px;
 }
 
 .history-item {
   margin-left: 15px;
-  padding: 8px 0;
-  color: rgba(255, 255, 255, 0.95);
+  padding: 6px 0;
+  color: #555;
   font-size: 0.95rem;
 }
 
@@ -542,23 +501,31 @@ input[type="checkbox"]:checked::before {
   display: block;
   text-align: center;
   padding: 20px;
-  color: rgba(255, 255, 255, 0.8);
+  color: #95a5a6;
   font-style: italic;
 }
 
-/* ========================================
-   UTILITY CLASSES
-   ======================================== */
-
+/* Utility Classes */
 .hidden {
   display: none !important;
 }
 
-/* ========================================
-   RESPONSIVE DESIGN
-   ======================================== */
-
+/* Responsive Design */
 @media (max-width: 768px) {
+  body {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    padding: 15px;
+  }
+
+  .card,
+  section {
+    padding: 15px;
+  }
+
   #choreList,
   #personList,
   #availabilityList {
@@ -573,14 +540,11 @@ input[type="checkbox"]:checked::before {
 
   .assignment select {
     width: 100%;
+    max-width: none;
   }
 
-  h1 {
-    font-size: 1.5rem;
-    padding: 15px;
-  }
-
-  .card, section {
+  .modal-content {
+    width: 95%;
     padding: 20px;
   }
 }
@@ -590,49 +554,39 @@ input[type="checkbox"]:checked::before {
     padding: 10px;
   }
 
-  .modal-content {
-    width: 95%;
-    padding: 20px;
-  }
-
   button {
     font-size: 0.9rem;
     padding: 8px 16px;
   }
 
-  input[type="checkbox"] {
-    width: 50px;
-    height: 26px;
+  .card-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
   }
 
-  input[type="checkbox"]::before {
-    width: 20px;
-    height: 20px;
-  }
-
-  input[type="checkbox"]:checked::before {
-    left: 27px;
+  .icon-btn {
+    align-self: flex-end;
   }
 }
 
-/* ========================================
-   SCROLLBAR STYLING (OPTIONAL)
-   ======================================== */
+/* Print Styles */
+@media print {
+  body {
+    background: white;
+  }
 
-::-webkit-scrollbar {
-  width: 10px;
-}
+  .card,
+  section {
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
 
-::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
+  button {
+    display: none;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.3);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.5);
+  .modal {
+    display: none !important;
+  }
 }
