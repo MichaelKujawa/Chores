@@ -129,14 +129,14 @@ button:active {
 
 /* Delete Buttons */
 ul li button {
-  background: #e74c3c;
-  color: white;
+  background: transparent;
+  color: #999;
   width: 24px;
   height: 24px;
   min-width: 24px;
   min-height: 24px;
-  border-radius: 50%;
-  font-size: 0.9rem;
+  border-radius: 4px;
+  font-size: 1.1rem;
   padding: 0;
   margin-left: auto;
   flex-shrink: 0;
@@ -144,10 +144,13 @@ ul li button {
   align-items: center;
   justify-content: center;
   line-height: 1;
+  font-weight: bold;
+  transition: all 0.2s;
 }
 
 ul li button:hover {
-  background: #c0392b;
+  background: #ffe0e0;
+  color: #e74c3c;
 }
 
 /* Generate Button */
@@ -204,6 +207,14 @@ li {
   border: 1px solid #e0e0e0;
   gap: 8px;
   max-width: 100%;
+  min-width: 140px;
+  position: relative;
+  z-index: 1;
+}
+
+li:focus-within {
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 li:hover {
@@ -251,14 +262,25 @@ li input[type="text"] {
   border: none;
   font-weight: 500;
   padding: 4px 8px;
-  width: auto; /* Let size attribute control width */
+  width: auto;
+  max-width: 120px;
   color: #2c3e50;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  border-radius: 4px;
 }
 
 li input[type="text"]:focus {
   background: white;
   border: 1px solid #3498db;
   border-radius: 4px;
+  max-width: 300px;
+  overflow: visible;
+  white-space: normal;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+  outline: none;
 }
 
 /* Checkboxes - Simple Toggle Switches */
