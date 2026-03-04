@@ -566,7 +566,12 @@ function generateAssignments() {
   /* ---------- HISTORY ---------- */
 
   const dates = Object.keys(data.assignmentsByDate)
-    .filter(d => d < today)
+    .filter(d => {
+      // Only include dates before today that have actual assignments
+      if (d >= today) return false;
+      const dayData = data.assignmentsByDate[d];
+      return dayData && Object.keys(dayData.assignments || {}).length > 0;
+    })
     .sort()
     .reverse();
 
@@ -586,19 +591,33 @@ function generateAssignments() {
       candidates = candidates.filter(pid => !assignedToday.has(pid));
     }
 
-    // No more than N consecutive assignment days
-    candidates = candidates.filter(pid =>
-      !dates.slice(0, CONSECUTIVE_ASSIGNMENT_LIMIT).every(d =>
+    // No more than 2 consecutive assignment days (prevents working 3+ days in a row)
+    // NOTE: Checks ALL days with assignments, regardless of confirmation status
+    // If CONSECUTIVE_ASSIGNMENT_LIMIT = 2, and person worked last 2 days, they cannot work today
+    candidates = candidates.filter(pid => {
+      if (dates.length < CONSECUTIVE_ASSIGNMENT_LIMIT) return true; // Not enough history
+      
+      // Check if this person was assigned on BOTH of the last N days
+      const lastNDays = dates.slice(0, CONSECUTIVE_ASSIGNMENT_LIMIT);
+      const workedAllDays = lastNDays.every(d =>
         Object.values(data.assignmentsByDate[d]?.assignments || {}).includes(pid)
-      )
-    );
+      );
+      
+      return !workedAllDays; // Exclude if they worked all of the last N days
+    });
 
-    // Same chore cooldown
-    candidates = candidates.filter(pid =>
-      !dates.slice(0, SAME_CHORE_COOLDOWN_DAYS).some(d =>
+    // Same chore cooldown - person cannot do same chore within last 5 days
+    // NOTE: Checks ALL days with assignments, regardless of confirmation status
+    // If SAME_CHORE_COOLDOWN_DAYS = 5, checks the 5 most recent days with assignments
+    // Example: If person did "Bathroom 1" on any of the last 5 days, they can't do it today
+    candidates = candidates.filter(pid => {
+      const recentDays = dates.slice(0, SAME_CHORE_COOLDOWN_DAYS);
+      const didThisChoreRecently = recentDays.some(d =>
         data.assignmentsByDate[d]?.assignments?.[chore.id] === pid
-      )
-    );
+      );
+      
+      return !didThisChoreRecently; // Exclude if they did this chore in last 5 days
+    });
 
     if (!candidates.length) {
       success = false;
