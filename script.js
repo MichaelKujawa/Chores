@@ -3,23 +3,16 @@
    ======================================== */
 
 const STORAGE_KEY = "choreSchedulerData_v1";
-const SAME_CHORE_COOLDOWN_DAYS = 5;
-const CONSECUTIVE_ASSIGNMENT_LIMIT = 2;
+const SAME_CHORE_COOLDOWN_DAYS = 7; // Rule 2: same chore within a week
+const CONSECUTIVE_ASSIGNMENT_LIMIT = 2; // Rule 1: no 3 days in a row
 const HISTORY_RETENTION_DAYS = 30;
 
 /* ========================================
    UTILITY FUNCTIONS
    ======================================== */
 
-/**
- * Generates a unique identifier
- * Falls back to a custom implementation for non-secure contexts
- */
 function uuid() {
-  if (crypto?.randomUUID) {
-    return crypto.randomUUID();
-  }
-  // Fallback for non-HTTPS contexts
+  if (crypto?.randomUUID) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -27,9 +20,6 @@ function uuid() {
   });
 }
 
-/**
- * Gets current date as YYYY-MM-DD string in local timezone
- */
 function getLocalDateString() {
   const now = new Date();
   const year = now.getFullYear();
@@ -40,23 +30,39 @@ function getLocalDateString() {
 
 const today = getLocalDateString();
 
-/**
- * Displays an error message in the UI
- */
 function showError(message) {
-  const warningsEl = document.getElementById("warning");
-  if (warningsEl) {
-    warningsEl.textContent = message;
+  const el = document.getElementById("warning");
+  if (el) {
+    el.textContent = message;
+    el.style.color = "";
+    el.style.background = "";
+    el.style.borderColor = "";
   }
 }
 
-/**
- * Clears error messages from the UI
- */
+function showSuccess(message) {
+  const el = document.getElementById("warning");
+  if (el) {
+    el.textContent = message;
+    el.style.color = "#15803d";
+    el.style.background = "#dcfce7";
+    el.style.borderColor = "#86efac";
+    setTimeout(() => {
+      el.textContent = "";
+      el.style.color = "";
+      el.style.background = "";
+      el.style.borderColor = "";
+    }, 3000);
+  }
+}
+
 function clearError() {
-  const warningsEl = document.getElementById("warning");
-  if (warningsEl) {
-    warningsEl.textContent = "";
+  const el = document.getElementById("warning");
+  if (el) {
+    el.textContent = "";
+    el.style.color = "";
+    el.style.background = "";
+    el.style.borderColor = "";
   }
 }
 
@@ -64,34 +70,25 @@ function clearError() {
    STORAGE FUNCTIONS
    ======================================== */
 
-/**
- * Loads data from localStorage
- * Returns default structure if no data exists
- */
 function loadData() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : {
-      meta: {},
-      chores: [],
-      people: [],
-      assignmentsByDate: {}
+    const data = stored ? JSON.parse(stored) : {};
+    return {
+      meta: data.meta || {},
+      chores: data.chores || [],
+      people: data.people || [],
+      assignmentsByDate: data.assignmentsByDate || {},
+      // inactiveChoreIds: set of chore IDs that are toggled OFF
+      inactiveChoreIds: data.inactiveChoreIds || []
     };
   } catch (error) {
     console.error("Error loading data:", error);
     showError("Error loading data. Please refresh the page.");
-    return {
-      meta: {},
-      chores: [],
-      people: [],
-      assignmentsByDate: {}
-    };
+    return { meta: {}, chores: [], people: [], assignmentsByDate: {}, inactiveChoreIds: [] };
   }
 }
 
-/**
- * Saves data to localStorage
- */
 function saveData(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -102,132 +99,175 @@ function saveData(data) {
 }
 
 /* ========================================
-   DATA NORMALIZATION
+   HISTORY HELPERS
    ======================================== */
 
-/**
- * Gets the most recent day before the given date
- */
-function getMostRecentDay(data, beforeDate) {
-  const dates = Object.keys(data.assignmentsByDate)
-    .filter(d => d < beforeDate)
+function getPastDatesWithAssignments(data, beforeDate) {
+  return Object.keys(data.assignmentsByDate)
+    .filter(d => d < beforeDate && Object.keys(data.assignmentsByDate[d]?.assignments || {}).length > 0)
     .sort()
     .reverse();
-
-  return dates.length ? data.assignmentsByDate[dates[0]] : null;
 }
 
 /**
- * Ensures availability data exists and is valid for a given date
- * Creates new day entry if needed, inheriting from previous day
+ * Rule 1: Returns true if person worked the last CONSECUTIVE_ASSIGNMENT_LIMIT days.
  */
+function workedConsecutiveDays(data, personId, beforeDate) {
+  const dates = getPastDatesWithAssignments(data, beforeDate);
+  if (dates.length < CONSECUTIVE_ASSIGNMENT_LIMIT) return false;
+  const lastN = dates.slice(0, CONSECUTIVE_ASSIGNMENT_LIMIT);
+  return lastN.every(d =>
+    Object.values(data.assignmentsByDate[d]?.assignments || {}).includes(personId)
+  );
+}
+
+/**
+ * Rule 2: Returns true if person did this specific chore within the last N days.
+ */
+function didChoreThisWeek(data, personId, choreId, beforeDate) {
+  const dates = getPastDatesWithAssignments(data, beforeDate);
+  const recentDays = dates.slice(0, SAME_CHORE_COOLDOWN_DAYS);
+  return recentDays.some(d =>
+    data.assignmentsByDate[d]?.assignments?.[choreId] === personId
+  );
+}
+
+/* ========================================
+   DATA NORMALIZATION
+   ======================================== */
+
+function getMostRecentDay(data, beforeDate) {
+  const dates = Object.keys(data.assignmentsByDate)
+    .filter(d => d < beforeDate).sort().reverse();
+  return dates.length ? data.assignmentsByDate[dates[0]] : null;
+}
+
 function normalizeAvailability(data, date) {
   let day = data.assignmentsByDate[date];
-
-  // Create day if missing
   if (!day) {
     const lastDay = getMostRecentDay(data, date);
-
     day = data.assignmentsByDate[date] = {
-      availablePersonIds:
-        lastDay && lastDay.availablePersonIds.length
-          ? [...lastDay.availablePersonIds]
-          : [],
+      availablePersonIds: (lastDay?.availablePersonIds?.length) ? [...lastDay.availablePersonIds] : [],
       assignments: {},
       confirmed: false
     };
-
     return day;
   }
-
-  // Sanitize existing day
-  if (!Array.isArray(day.availablePersonIds)) {
-    day.availablePersonIds = [];
-  }
-
+  if (!Array.isArray(day.availablePersonIds)) day.availablePersonIds = [];
   if (day.availablePersonIds.length === 0) {
     const lastDay = getMostRecentDay(data, date);
-    if (lastDay?.availablePersonIds?.length) {
-      day.availablePersonIds = [...lastDay.availablePersonIds];
-    }
+    if (lastDay?.availablePersonIds?.length) day.availablePersonIds = [...lastDay.availablePersonIds];
   }
-
-  // Remove deleted people
-  day.availablePersonIds = day.availablePersonIds.filter(pid =>
-    data.people.some(p => p.id === pid)
-  );
-
+  day.availablePersonIds = day.availablePersonIds.filter(pid => data.people.some(p => p.id === pid));
   return day;
 }
 
 /* ========================================
-   RENDERING FUNCTIONS
+   RENDERING
    ======================================== */
 
-/**
- * Renders all UI sections
- */
 function renderAll() {
   const data = loadData();
-  renderList("choreList", data.chores, renameChore, deleteChore);
-  renderList("personList", data.people, renamePerson, deletePerson);
+  renderChoreList(data);
+  renderPersonList(data);
   renderAvailability();
   renderAssignments();
 }
 
 /**
- * Renders a generic list (chores or people)
+ * Renders chore list with active/inactive toggles (Rule 4).
  */
-function renderList(id, items, renameFn, deleteFn) {
-  const ul = document.getElementById(id);
+function renderChoreList(data) {
+  const ul = document.getElementById("choreList");
   if (!ul) return;
-  
   ul.innerHTML = "";
 
-  items.forEach(item => {
+  data.chores.forEach(chore => {
+    const isActive = !data.inactiveChoreIds.includes(chore.id);
     const li = document.createElement("li");
-    
+    if (!isActive) li.classList.add("chore-inactive");
+
+    // Toggle switch (Rule 4)
+    const toggle = document.createElement("input");
+    toggle.type = "checkbox";
+    toggle.className = "toggle";
+    toggle.checked = isActive;
+    toggle.title = isActive ? "Active — click to disable" : "Inactive — click to enable";
+    toggle.onchange = () => {
+      const d = loadData();
+      if (toggle.checked) {
+        d.inactiveChoreIds = d.inactiveChoreIds.filter(id => id !== chore.id);
+      } else {
+        if (!d.inactiveChoreIds.includes(chore.id)) d.inactiveChoreIds.push(chore.id);
+      }
+      saveData(d);
+      renderAll();
+    };
+
+    // Name input
     const input = document.createElement("input");
     input.type = "text";
-    input.value = item.name;
-    input.size = Math.max(item.name.length || 10, 10); // Set size based on content
+    input.value = chore.name;
+    input.size = Math.max(chore.name.length, 8);
     input.onchange = () => {
       const trimmed = input.value.trim();
-      if (!trimmed) {
-        showError("Name cannot be empty.");
-        input.value = item.name;
-        return;
-      }
-      renameFn(item.id, trimmed);
+      if (!trimmed) { showError("Name cannot be empty."); input.value = chore.name; return; }
+      renameChore(chore.id, trimmed);
     };
-    // Update size dynamically as user types
-    input.oninput = () => {
-      input.size = Math.max(input.value.length || 10, 10);
-    };
+    input.oninput = () => { input.size = Math.max(input.value.length, 8); };
 
     const btn = document.createElement("button");
     btn.textContent = "✖";
-    btn.onclick = () => {
-      const confirmed = confirm(`Delete "${item.name}"?`);
-      if (!confirmed) return;
-      deleteFn(item.id);
+    btn.onclick = () => { if (confirm(`Delete "${chore.name}"?`)) deleteChore(chore.id); };
+
+    li.append(toggle, input, btn);
+    ul.appendChild(li);
+  });
+}
+
+/**
+ * Renders people list.
+ */
+function renderPersonList(data) {
+  const ul = document.getElementById("personList");
+  if (!ul) return;
+  ul.innerHTML = "";
+
+  data.people.forEach(person => {
+    const li = document.createElement("li");
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = person.name;
+    input.size = Math.max(person.name.length, 8);
+    input.onchange = () => {
+      const trimmed = input.value.trim();
+      if (!trimmed) { showError("Name cannot be empty."); input.value = person.name; return; }
+      renamePerson(person.id, trimmed);
     };
+    input.oninput = () => { input.size = Math.max(input.value.length, 8); };
+
+    const btn = document.createElement("button");
+    btn.textContent = "✖";
+    btn.onclick = () => { if (confirm(`Delete "${person.name}"?`)) deletePerson(person.id); };
 
     li.append(input, btn);
     ul.appendChild(li);
   });
 }
 
-/**
- * Renders the availability checklist for today
- */
+function renderList(id, items, renameFn, deleteFn) {
+  // Legacy helper used externally — route through new renderers
+  const data = loadData();
+  if (id === "choreList") renderChoreList(data);
+  else if (id === "personList") renderPersonList(data);
+}
+
 function renderAvailability() {
   const data = loadData();
   const ul = document.getElementById("availabilityList");
   if (!ul) return;
-  
   ul.innerHTML = "";
-
   const day = normalizeAvailability(data, today);
   saveData(data);
 
@@ -237,25 +277,35 @@ function renderAvailability() {
     cb.type = "checkbox";
     cb.checked = day.availablePersonIds.includes(p.id);
     cb.onchange = () => toggleAvailability(p.id, cb.checked);
-    li.append(p.name, " ", cb);
+
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = p.name;
+    nameSpan.style.flex = "1";
+
+    li.append(nameSpan, cb);
     ul.appendChild(li);
   });
 }
 
 /**
- * Renders the assignment dropdowns for today
+ * Renders assignment selects with colored option highlights (Rules 1, 2, 3).
  */
 function renderAssignments() {
   const data = loadData();
   const div = document.getElementById("assignments");
   if (!div) return;
-  
   div.innerHTML = "";
 
   const day = data.assignmentsByDate[today];
   if (!day) return;
 
-  data.chores.forEach(chore => {
+  // Only show active chores (Rule 4)
+  const activeChores = data.chores.filter(c => !data.inactiveChoreIds.includes(c.id));
+
+  // Rule 3: find available people who have no chore assigned today
+  const assignedPersonIds = new Set(Object.values(day.assignments || {}));
+
+  activeChores.forEach(chore => {
     const row = document.createElement("div");
     row.className = "assignment";
 
@@ -263,68 +313,93 @@ function renderAssignments() {
     label.textContent = chore.name;
 
     const select = document.createElement("select");
-    
-    // Add empty option
+
     const emptyOpt = document.createElement("option");
     emptyOpt.value = "";
-    emptyOpt.textContent = "-- Select --";
+    emptyOpt.textContent = "— Select —";
     select.appendChild(emptyOpt);
 
-    const assignedPersonId = day.assignments[chore.id];
+    const assignedPersonId = day.assignments?.[chore.id];
 
     data.people.forEach(p => {
       const isAssigned = assignedPersonId === p.id;
       const isAvailable = day.availablePersonIds.includes(p.id);
-
-      // Show person if they're available OR currently assigned
       if (!isAvailable && !isAssigned) return;
 
       const opt = document.createElement("option");
       opt.value = p.id;
-      opt.textContent = p.name;
       opt.selected = isAssigned;
 
-      if (!isAvailable && isAssigned) {
-        opt.textContent += " (Unavailable)";
+      // Rule 1: would be 3rd consecutive day
+      const tooManyDays = workedConsecutiveDays(data, p.id, today);
+      // Rule 2: did this exact chore this week
+      const repeatedChore = didChoreThisWeek(data, p.id, chore.id, today);
+      // Rule 3: available but no chore yet
+      const freeAndAvailable = isAvailable && !assignedPersonIds.has(p.id) && !isAssigned;
+
+      let label_text = p.name;
+      if (!isAvailable && isAssigned) label_text += " (unavailable)";
+      else if (freeAndAvailable) label_text += " (available)";
+
+      opt.textContent = label_text;
+
+      if (tooManyDays) {
+        opt.className = "opt-red";
+        opt.textContent += " ⚠ 2 days in a row";
+      } else if (repeatedChore) {
+        opt.className = "opt-yellow";
+        opt.textContent += " ⚠ did this recently";
+      } else if (freeAndAvailable) {
+        opt.className = "opt-green";
       }
 
       select.appendChild(opt);
     });
 
+    // Status badge next to select for the currently assigned person
+    let statusBadge = null;
+    if (assignedPersonId) {
+      const tooManyDays = workedConsecutiveDays(data, assignedPersonId, today);
+      const repeatedChore = didChoreThisWeek(data, assignedPersonId, chore.id, today);
+      if (tooManyDays) {
+        statusBadge = document.createElement("span");
+        statusBadge.className = "assign-status red";
+        statusBadge.textContent = "2 days in a row";
+      } else if (repeatedChore) {
+        statusBadge = document.createElement("span");
+        statusBadge.className = "assign-status yellow";
+        statusBadge.textContent = "repeated chore";
+      }
+    }
+
     select.onchange = () => {
       const personId = select.value;
-      
-      // Allow unassigning
       if (!personId) {
         delete day.assignments[chore.id];
         saveData(data);
+        renderAssignments();
         return;
       }
-
-      // Validate availability
       if (!day.availablePersonIds.includes(personId)) {
         showError("This person is marked unavailable.");
         renderAssignments();
         return;
       }
-
-      // Validate one chore per person per day
       const alreadyAssigned = Object.entries(day.assignments)
-        .filter(([cId, pId]) => pId === personId && cId !== chore.id)
-        .length;
-
+        .filter(([cId, pId]) => pId === personId && cId !== chore.id).length;
       if (alreadyAssigned >= 1) {
         showError("This person already has a chore today.");
         renderAssignments();
         return;
       }
-
       clearError();
       day.assignments[chore.id] = personId;
       saveData(data);
+      renderAssignments();
     };
 
     row.append(label, select);
+    if (statusBadge) row.appendChild(statusBadge);
     div.appendChild(row);
   });
 }
@@ -333,126 +408,62 @@ function renderAssignments() {
    CRUD OPERATIONS
    ======================================== */
 
-/**
- * Adds a new chore
- */
 function addChore(choreName = null) {
   const name = choreName || document.getElementById("newChore")?.value;
   const trimmed = name?.trim();
-  
-  if (!trimmed) {
-    showError("Chore name cannot be empty.");
-    return;
-  }
-
+  if (!trimmed) { showError("Chore name cannot be empty."); return; }
   const data = loadData();
-  
-  // Check for duplicates
   if (data.chores.some(c => c.name.toLowerCase() === trimmed.toLowerCase())) {
-    showError("A chore with this name already exists.");
-    return;
+    showError("A chore with this name already exists."); return;
   }
-
   data.chores.push({ id: uuid(), name: trimmed });
   saveData(data);
-  
   const input = document.getElementById("newChore");
   if (input) input.value = "";
-  
   clearError();
-  renderList("choreList", data.chores, renameChore, deleteChore);
-  renderAssignments();
+  renderAll();
 }
 
-/**
- * Adds a new person
- */
 function addPerson(personName = null) {
   const name = personName || document.getElementById("newPerson")?.value;
   const trimmed = name?.trim();
-  
-  if (!trimmed) {
-    showError("Person name cannot be empty.");
-    return;
-  }
-
+  if (!trimmed) { showError("Person name cannot be empty."); return; }
   const data = loadData();
-  
-  // Check for duplicates
   if (data.people.some(p => p.name.toLowerCase() === trimmed.toLowerCase())) {
-    showError("A person with this name already exists.");
-    return;
+    showError("A person with this name already exists."); return;
   }
-
   data.people.push({ id: uuid(), name: trimmed });
   saveData(data);
-  
   const input = document.getElementById("newPerson");
   if (input) input.value = "";
-  
   clearError();
-  renderList("personList", data.people, renamePerson, deletePerson);
-  renderAvailability();
+  renderAll();
 }
 
-/**
- * Renames a chore
- */
 function renameChore(id, name) {
   const data = loadData();
   const chore = data.chores.find(c => c.id === id);
-  
-  if (!chore) {
-    console.error("Chore not found:", id);
-    return;
-  }
-  
+  if (!chore) return;
   const trimmed = name.trim();
-  if (!trimmed) {
-    showError("Chore name cannot be empty.");
-    renderAll();
-    return;
-  }
-  
-  // Check for duplicates (excluding current chore)
+  if (!trimmed) { showError("Chore name cannot be empty."); renderAll(); return; }
   if (data.chores.some(c => c.id !== id && c.name.toLowerCase() === trimmed.toLowerCase())) {
-    showError("A chore with this name already exists.");
-    renderAll();
-    return;
+    showError("A chore with this name already exists."); renderAll(); return;
   }
-  
   chore.name = trimmed;
   saveData(data);
   clearError();
   renderAssignments();
 }
 
-/**
- * Renames a person
- */
 function renamePerson(id, name) {
   const data = loadData();
   const person = data.people.find(p => p.id === id);
-  
-  if (!person) {
-    console.error("Person not found:", id);
-    return;
-  }
-  
+  if (!person) return;
   const trimmed = name.trim();
-  if (!trimmed) {
-    showError("Person name cannot be empty.");
-    renderAll();
-    return;
-  }
-  
-  // Check for duplicates (excluding current person)
+  if (!trimmed) { showError("Person name cannot be empty."); renderAll(); return; }
   if (data.people.some(p => p.id !== id && p.name.toLowerCase() === trimmed.toLowerCase())) {
-    showError("A person with this name already exists.");
-    renderAll();
-    return;
+    showError("A person with this name already exists."); renderAll(); return;
   }
-  
   person.name = trimmed;
   saveData(data);
   clearError();
@@ -460,40 +471,25 @@ function renamePerson(id, name) {
   renderAvailability();
 }
 
-/**
- * Deletes a chore and all its assignments
- */
 function deleteChore(id) {
   const data = loadData();
   data.chores = data.chores.filter(c => c.id !== id);
-
-  // Clean up assignments
-  Object.values(data.assignmentsByDate).forEach(day => {
-    delete day.assignments[id];
-  });
-
+  data.inactiveChoreIds = (data.inactiveChoreIds || []).filter(cid => cid !== id);
+  Object.values(data.assignmentsByDate).forEach(day => { delete day.assignments[id]; });
   saveData(data);
   clearError();
   renderAll();
 }
 
-/**
- * Deletes a person and all their assignments
- */
 function deletePerson(id) {
   const data = loadData();
   data.people = data.people.filter(p => p.id !== id);
-
-  // Clean up availability and assignments
   Object.values(data.assignmentsByDate).forEach(day => {
     day.availablePersonIds = day.availablePersonIds.filter(pid => pid !== id);
     Object.keys(day.assignments).forEach(choreId => {
-      if (day.assignments[choreId] === id) {
-        delete day.assignments[choreId];
-      }
+      if (day.assignments[choreId] === id) delete day.assignments[choreId];
     });
   });
-
   saveData(data);
   clearError();
   renderAll();
@@ -503,28 +499,19 @@ function deletePerson(id) {
    AVAILABILITY MANAGEMENT
    ======================================== */
 
-/**
- * Toggles a person's availability for today
- */
 function toggleAvailability(personId, available) {
   const data = loadData();
   const day = data.assignmentsByDate[today];
   if (!day) return;
-
   if (available && !day.availablePersonIds.includes(personId)) {
     day.availablePersonIds.push(personId);
   }
   if (!available) {
     day.availablePersonIds = day.availablePersonIds.filter(id => id !== personId);
-    
-    // Remove assignments for unavailable person
     Object.keys(day.assignments).forEach(choreId => {
-      if (day.assignments[choreId] === personId) {
-        delete day.assignments[choreId];
-      }
+      if (day.assignments[choreId] === personId) delete day.assignments[choreId];
     });
   }
-
   saveData(data);
   renderAssignments();
 }
@@ -533,129 +520,62 @@ function toggleAvailability(personId, available) {
    ASSIGNMENT GENERATION
    ======================================== */
 
-/**
- * Generates random assignments based on fairness rules
- */
 function generateAssignments() {
   const data = loadData();
   const day = normalizeAvailability(data, today);
   saveData(data);
 
-  if (day.confirmed) {
-    showError("Assignments are already confirmed for today.");
-    return;
-  }
-
+  if (day.confirmed) { showError("Assignments are already confirmed for today."); return; }
   clearError();
 
   const available = [...day.availablePersonIds];
-  const chores = data.chores;
-
-  /* ---------- VALIDATION ---------- */
+  // Only generate for active chores (Rule 4)
+  const chores = data.chores.filter(c => !data.inactiveChoreIds.includes(c.id));
 
   if (!available.length) {
-    showError("No available people selected. Please select availability before generating assignments.");
-    return;
+    showError("No available people. Please mark availability first."); return;
   }
-
   if (available.length < chores.length) {
-    showError("Not enough available people for all chores. Please adjust availability or assign manually.");
-    return;
+    showError("Not enough available people for all active chores. Adjust availability or toggle off some chores."); return;
   }
 
-  /* ---------- HISTORY ---------- */
-
-  const dates = Object.keys(data.assignmentsByDate)
-    .filter(d => {
-      // Only include dates before today that have actual assignments
-      if (d >= today) return false;
-      const dayData = data.assignmentsByDate[d];
-      return dayData && Object.keys(dayData.assignments || {}).length > 0;
-    })
-    .sort()
-    .reverse();
-
+  const dates = getPastDatesWithAssignments(data, today);
   const enforceSingleChore = available.length >= chores.length;
 
-  /* ---------- PHASE 1: STRICT FAIRNESS ---------- */
-
+  /* Phase 1: Strict fairness */
   let newAssignments = {};
   let assignedToday = new Set();
   let success = true;
 
   for (const chore of chores) {
     let candidates = [...available];
+    if (enforceSingleChore) candidates = candidates.filter(pid => !assignedToday.has(pid));
+    candidates = candidates.filter(pid => !workedConsecutiveDays(data, pid, today));
+    candidates = candidates.filter(pid => !didChoreThisWeek(data, pid, chore.id, today));
 
-    // One chore per person
-    if (enforceSingleChore) {
-      candidates = candidates.filter(pid => !assignedToday.has(pid));
-    }
-
-    // No more than 2 consecutive assignment days (prevents working 3+ days in a row)
-    // NOTE: Checks ALL days with assignments, regardless of confirmation status
-    // If CONSECUTIVE_ASSIGNMENT_LIMIT = 2, and person worked last 2 days, they cannot work today
-    candidates = candidates.filter(pid => {
-      if (dates.length < CONSECUTIVE_ASSIGNMENT_LIMIT) return true; // Not enough history
-      
-      // Check if this person was assigned on BOTH of the last N days
-      const lastNDays = dates.slice(0, CONSECUTIVE_ASSIGNMENT_LIMIT);
-      const workedAllDays = lastNDays.every(d =>
-        Object.values(data.assignmentsByDate[d]?.assignments || {}).includes(pid)
-      );
-      
-      return !workedAllDays; // Exclude if they worked all of the last N days
-    });
-
-    // Same chore cooldown - person cannot do same chore within last 5 days
-    // NOTE: Checks ALL days with assignments, regardless of confirmation status
-    // If SAME_CHORE_COOLDOWN_DAYS = 5, checks the 5 most recent days with assignments
-    // Example: If person did "Bathroom 1" on any of the last 5 days, they can't do it today
-    candidates = candidates.filter(pid => {
-      const recentDays = dates.slice(0, SAME_CHORE_COOLDOWN_DAYS);
-      const didThisChoreRecently = recentDays.some(d =>
-        data.assignmentsByDate[d]?.assignments?.[chore.id] === pid
-      );
-      
-      return !didThisChoreRecently; // Exclude if they did this chore in last 5 days
-    });
-
-    if (!candidates.length) {
-      success = false;
-      break;
-    }
-
+    if (!candidates.length) { success = false; break; }
     const pick = candidates[Math.floor(Math.random() * candidates.length)];
     newAssignments[chore.id] = pick;
     assignedToday.add(pick);
   }
 
-  /* ---------- PHASE 2: RELAX FAIRNESS ---------- */
-
+  /* Phase 2: Relax fairness */
   if (!success) {
     newAssignments = {};
     assignedToday = new Set();
-
     for (const chore of chores) {
       let candidates = [...available];
-
-      if (enforceSingleChore) {
-        candidates = candidates.filter(pid => !assignedToday.has(pid));
-      }
-
+      if (enforceSingleChore) candidates = candidates.filter(pid => !assignedToday.has(pid));
       if (!candidates.length) {
         showError("Assignment impossible without violating daily limits. Manual review required.");
         return;
       }
-
       const pick = candidates[Math.floor(Math.random() * candidates.length)];
       newAssignments[chore.id] = pick;
       assignedToday.add(pick);
     }
-
-    showError("Fairness rules were relaxed for some chores. Manual review recommended.");
+    showError("⚠ Fairness rules relaxed for some chores — manual review recommended.");
   }
-
-  /* ---------- COMMIT ---------- */
 
   day.assignments = newAssignments;
   saveData(data);
@@ -666,31 +586,21 @@ function generateAssignments() {
    HISTORY MODAL
    ======================================== */
 
-/**
- * Opens the history modal
- */
 function openHistoryModal() {
   renderHistory();
   const modal = document.getElementById("historyModal");
   if (modal) modal.classList.remove("hidden");
 }
 
-/**
- * Closes the history modal
- */
 function closeHistoryModal() {
   const modal = document.getElementById("historyModal");
   if (modal) modal.classList.add("hidden");
 }
 
-/**
- * Renders assignment history for the past 30 days
- */
 function renderHistory() {
   const data = loadData();
   const container = document.getElementById("historyContent");
   if (!container) return;
-  
   container.innerHTML = "";
 
   const cutoff = new Date();
@@ -698,12 +608,10 @@ function renderHistory() {
 
   const dates = Object.keys(data.assignmentsByDate)
     .filter(date => new Date(date) >= cutoff)
-    .sort()
-    .reverse();
+    .sort().reverse();
 
   if (dates.length === 0) {
-    container.textContent = "No assignment history available.";
-    return;
+    container.textContent = "No assignment history available."; return;
   }
 
   dates.forEach(date => {
@@ -717,13 +625,11 @@ function renderHistory() {
 
     const status = document.createElement("span");
     status.className = day.confirmed ? "history-confirmed" : "history-unconfirmed";
-    status.textContent = day.confirmed ? " (Confirmed)" : " (Unconfirmed)";
-
+    status.textContent = day.confirmed ? " ✔ Confirmed" : " (Unconfirmed)";
     dateHeader.appendChild(status);
     dayDiv.appendChild(dateHeader);
 
-    const assignments = Object.entries(day.assignments);
-    
+    const assignments = Object.entries(day.assignments || {});
     if (assignments.length === 0) {
       const item = document.createElement("div");
       item.className = "history-item";
@@ -733,11 +639,9 @@ function renderHistory() {
       assignments.forEach(([choreId, personId]) => {
         const chore = data.chores.find(c => c.id === choreId);
         const person = data.people.find(p => p.id === personId);
-
         const item = document.createElement("div");
         item.className = "history-item";
         item.textContent = `• ${chore?.name ?? "Unknown Chore"} — ${person?.name ?? "Unknown Person"}`;
-
         dayDiv.appendChild(item);
       });
     }
@@ -750,187 +654,88 @@ function renderHistory() {
    CONFIRMATION & CLEANUP
    ======================================== */
 
-/**
- * Confirms today's assignments
- */
 function confirmAssignments() {
   const data = loadData();
   const day = data.assignmentsByDate[today];
-  
-  if (!day) {
-    showError("No assignments for today.");
-    return;
-  }
-  
-  if (day.confirmed) {
-    showError("Assignments are already confirmed for today.");
-    return;
-  }
-  
+  if (!day) { showError("No assignments for today."); return; }
+  if (day.confirmed) { showError("Assignments are already confirmed for today."); return; }
   day.confirmed = true;
   saveData(data);
   clearError();
-  
-  // Use UI feedback instead of alert
-  const warningsEl = document.getElementById("warning");
-  if (warningsEl) {
-    warningsEl.textContent = "✓ Assignments confirmed for today.";
-    warningsEl.style.color = "green";
-    setTimeout(() => {
-      warningsEl.textContent = "";
-      warningsEl.style.color = "";
-    }, 3000);
-  }
+  showSuccess("✔ Assignments confirmed for today.");
 }
 
-/**
- * Deletes assignment data older than 30 days
- */
 function cleanupOldData() {
   const data = loadData();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - HISTORY_RETENTION_DAYS);
-
-  let deletedCount = 0;
+  let count = 0;
   Object.keys(data.assignmentsByDate).forEach(date => {
-    if (new Date(date) < cutoff) {
-      delete data.assignmentsByDate[date];
-      deletedCount++;
-    }
+    if (new Date(date) < cutoff) { delete data.assignmentsByDate[date]; count++; }
   });
-
   saveData(data);
-  
-  // Use UI feedback instead of alert
-  const warningsEl = document.getElementById("warning");
-  if (warningsEl) {
-    warningsEl.textContent = `✓ Deleted ${deletedCount} old assignment record(s).`;
-    warningsEl.style.color = "green";
-    setTimeout(() => {
-      warningsEl.textContent = "";
-      warningsEl.style.color = "";
-    }, 3000);
-  }
+  showSuccess(`✔ Deleted ${count} old record(s).`);
 }
 
 /* ========================================
-   MODAL LOGIC
+   MODAL SETUP
    ======================================== */
 
-/**
- * Sets up Add Chore modal
- */
 function setupAddChoreModal() {
   const openBtn = document.getElementById("openAddChoreModal");
   const modal = document.getElementById("addChoreModal");
   const input = document.getElementById("modalChoreInput");
   const confirmBtn = document.getElementById("confirmAddChore");
   const cancelBtn = document.getElementById("cancelAddChore");
-
   if (!openBtn || !modal || !input || !confirmBtn || !cancelBtn) return;
 
-  openBtn.onclick = () => {
-    input.value = "";
-    modal.classList.remove("hidden");
-    input.focus();
-  };
-
-  cancelBtn.onclick = () => {
-    modal.classList.add("hidden");
-  };
-
+  openBtn.onclick = () => { input.value = ""; modal.classList.remove("hidden"); input.focus(); };
+  cancelBtn.onclick = () => modal.classList.add("hidden");
   confirmBtn.onclick = () => {
     const trimmed = input.value.trim();
-    if (trimmed) {
-      addChore(trimmed);
-      modal.classList.add("hidden");
-    }
+    if (trimmed) { addChore(trimmed); modal.classList.add("hidden"); }
   };
-
-  // Allow Enter key to submit
-  input.onkeypress = (e) => {
-    if (e.key === "Enter") {
-      confirmBtn.click();
-    }
-  };
+  input.onkeypress = e => { if (e.key === "Enter") confirmBtn.click(); };
 }
 
-/**
- * Sets up Add Person modal
- */
 function setupAddPersonModal() {
   const openBtn = document.getElementById("openAddPersonModal");
   const modal = document.getElementById("addPersonModal");
   const input = document.getElementById("modalPersonInput");
   const confirmBtn = document.getElementById("confirmAddPerson");
   const cancelBtn = document.getElementById("cancelAddPerson");
-
   if (!openBtn || !modal || !input || !confirmBtn || !cancelBtn) return;
 
-  openBtn.onclick = () => {
-    input.value = "";
-    modal.classList.remove("hidden");
-    input.focus();
-  };
-
-  cancelBtn.onclick = () => {
-    modal.classList.add("hidden");
-  };
-
+  openBtn.onclick = () => { input.value = ""; modal.classList.remove("hidden"); input.focus(); };
+  cancelBtn.onclick = () => modal.classList.add("hidden");
   confirmBtn.onclick = () => {
     const trimmed = input.value.trim();
-    if (trimmed) {
-      addPerson(trimmed);
-      modal.classList.add("hidden");
-    }
+    if (trimmed) { addPerson(trimmed); modal.classList.add("hidden"); }
   };
-
-  // Allow Enter key to submit
-  input.onkeypress = (e) => {
-    if (e.key === "Enter") {
-      confirmBtn.click();
-    }
-  };
+  input.onkeypress = e => { if (e.key === "Enter") confirmBtn.click(); };
 }
 
 /* ========================================
    INITIALIZATION
    ======================================== */
 
-/**
- * Sets up all event listeners and initializes the app
- */
 function initialize() {
-  // Display today's date
   const todayEl = document.getElementById("today");
   if (todayEl) todayEl.textContent = today;
 
-  // Set up basic button handlers
-  const addChoreBtn = document.getElementById("addChoreBtn");
-  const addPersonBtn = document.getElementById("addPersonBtn");
-  const generateBtn = document.getElementById("generateBtn");
-  const confirmBtn = document.getElementById("confirmBtn");
-  const cleanupBtn = document.getElementById("cleanupBtn");
-  const viewHistoryBtn = document.getElementById("viewHistoryBtn");
-  const closeHistoryBtn = document.getElementById("closeHistoryBtn");
+  document.getElementById("addChoreBtn")?.addEventListener("click", () => addChore());
+  document.getElementById("addPersonBtn")?.addEventListener("click", () => addPerson());
+  document.getElementById("generateBtn")?.addEventListener("click", generateAssignments);
+  document.getElementById("confirmBtn")?.addEventListener("click", confirmAssignments);
+  document.getElementById("cleanupBtn")?.addEventListener("click", cleanupOldData);
+  document.getElementById("viewHistoryBtn")?.addEventListener("click", openHistoryModal);
+  document.getElementById("closeHistoryBtn")?.addEventListener("click", closeHistoryModal);
 
-  if (addChoreBtn) addChoreBtn.onclick = () => addChore();
-  if (addPersonBtn) addPersonBtn.onclick = () => addPerson();
-  if (generateBtn) generateBtn.onclick = generateAssignments;
-  if (confirmBtn) confirmBtn.onclick = confirmAssignments;
-  if (cleanupBtn) cleanupBtn.onclick = cleanupOldData;
-  if (viewHistoryBtn) viewHistoryBtn.onclick = openHistoryModal;
-  if (closeHistoryBtn) closeHistoryBtn.onclick = closeHistoryModal;
-
-  // Set up modals
   setupAddChoreModal();
   setupAddPersonModal();
-
-  // Initial render
   renderAll();
 }
 
-// Start the app when DOM is ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initialize);
 } else {

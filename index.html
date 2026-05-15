@@ -7,59 +7,69 @@
 </head>
 <body>
 
-<h1>Daily Chore Assigner</h1>
-<p><strong>Date:</strong> <span id="today"></span></p>
+<header>
+  <h1>🧹 Chore Assigner</h1>
+  <p class="date-display"><strong>Today:</strong> <span id="today"></span></p>
+</header>
 
 <!-- CHORES -->
 <div class="card">
   <div class="card-header">
     <h2>Chores</h2>
-
-    <!-- Visible button (UI only) -->
-    <button id="openAddChoreModal" class="icon-btn">＋</button>
-
-    <!-- JS-required button (hidden, logic only) -->
+    <button id="openAddChoreModal" class="icon-btn" title="Add chore">＋</button>
     <button id="addChoreBtn" class="hidden"></button>
   </div>
-  <!-- REQUIRED BY JS – DO NOT REMOVE -->
+  <p class="hint">Toggle chores on/off to include them in today's assignments.</p>
   <input id="newChore" type="text" class="hidden">
   <ul id="choreList"></ul>
 </div>
 
-
 <!-- NAMES -->
 <div class="card">
   <div class="card-header">
-    <h2>Names</h2>
-
-    <!-- Visible UI button -->
-    <button id="openAddPersonModal" class="icon-btn">＋</button>
-
-    <!-- JS-required button (logic only, hidden) -->
+    <h2>People</h2>
+    <button id="openAddPersonModal" class="icon-btn" title="Add person">＋</button>
     <button id="addPersonBtn" class="hidden"></button>
   </div>
-
-  <!-- JS-required input (hidden, logic only) -->
   <input id="newPerson" type="text" class="hidden">
-
-  <!-- JS renders people here -->
-  <ul id="personList" class="two-column-list"></ul>
+  <ul id="personList"></ul>
 </div>
 
-<section>
-  <h2>Availability</h2>
+<!-- AVAILABILITY -->
+<div class="card">
+  <h2>Availability Today</h2>
   <ul id="availabilityList"></ul>
-</section>
+</div>
 
-<section>
+<!-- ASSIGNMENTS -->
+<div class="card">
   <h2>Assignments</h2>
-  <button id="generateBtn">Generate</button>
-  <button id="confirmBtn">Confirm</button>
+  <div class="btn-row">
+    <button id="generateBtn">⚡ Generate</button>
+    <button id="confirmBtn">✔ Confirm</button>
+  </div>
   <p id="warning" class="warning"></p>
-  <div id="assignments"></div>
-</section>
 
-<!-- Past Assignments Modal -->
+  <!-- Legend -->
+  <div class="legend">
+    <span class="legend-item"><span class="badge badge-red">Name</span> — 2 days in a row (rest needed)</span>
+    <span class="legend-item"><span class="badge badge-yellow">Name</span> — Did this chore this week</span>
+    <span class="legend-item"><span class="badge badge-green">Name (available)</span> — Available, no chore yet</span>
+  </div>
+
+  <div id="assignments"></div>
+</div>
+
+<!-- MAINTENANCE -->
+<div class="card card-maintenance">
+  <h2>Maintenance</h2>
+  <div class="btn-row">
+    <button id="viewHistoryBtn">📋 Past Assignments</button>
+    <button id="cleanupBtn">🗑 Clear Old Data</button>
+  </div>
+</div>
+
+<!-- History Modal -->
 <div id="historyModal" class="modal hidden">
   <div class="modal-content">
     <div class="modal-header">
@@ -70,24 +80,11 @@
   </div>
 </div>
 
-
-<section>
-  <h2>Maintenance</h2>
-  <button id="viewHistoryBtn">View Past Assignments</button>
-  <button id="cleanupBtn">Delete Assignments Older Than 30 Days</button>
-</section>
-
 <!-- Add Chore Modal -->
 <div id="addChoreModal" class="modal hidden">
   <div class="modal-content">
     <h3>Add Chore</h3>
-
-    <input
-      id="modalChoreInput"
-      type="text"
-      placeholder="Chore name"
-    />
-
+    <input id="modalChoreInput" type="text" placeholder="Chore name" />
     <div class="modal-actions">
       <button id="confirmAddChore">Add</button>
       <button id="cancelAddChore">Cancel</button>
@@ -98,14 +95,8 @@
 <!-- Add Person Modal -->
 <div id="addPersonModal" class="modal hidden">
   <div class="modal-content">
-    <h3>Add Name</h3>
-
-    <input
-      id="modalPersonInput"
-      type="text"
-      placeholder="Person name"
-    />
-
+    <h3>Add Person</h3>
+    <input id="modalPersonInput" type="text" placeholder="Person name" />
     <div class="modal-actions">
       <button id="confirmAddPerson">Add</button>
       <button id="cancelAddPerson">Cancel</button>
